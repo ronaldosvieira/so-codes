@@ -1,2 +1,2 @@
-# so-codes
-Trabalhos da disciplina de Sistemas Operacionais da UFRRJ
+# Trabalhos de Sistemas Operacionais
+Trabalhos realizados na disciplina de Sistemas Operacionais do curso de Ciência da Computação da UFRRJ em 2016.1.
