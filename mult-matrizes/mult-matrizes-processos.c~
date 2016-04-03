@@ -3,8 +3,10 @@
 #include <unistd.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <sys/sysinfo.h>
 #include <sys/shm.h>
+#include <fcntl.h>
 #include <math.h>
 
 void printMatrix(float **m, float w, float h) {
@@ -24,12 +26,13 @@ int main (int argc, char **argv) {
     float **A, **B, **C;
     int iA, jA, iB, jB, iC, jC, i;
     int height, width;
-    int shm_A_ptr, shm_B_ptr, shm_C_ptr;
-    int num_procs;
+    int shm_fd, num_procs;
     int pid, pnum;
     int start_col, end_col, steps;
 
     FILE *input_file;
+
+    const char* mem_name = "mult_matriz";
 
     // checa argumentos
     if (argv[1] == NULL || (argv[2] != NULL && atoi(argv[2]) < 1)) {
@@ -59,51 +62,17 @@ int main (int argc, char **argv) {
 
     printf("Num. de processos: %d\n", num_procs);
 
-    int shm_A[height], shm_B[height], shm_C[height];
+    shm_fd = shm_open(mem_name, O_CREAT | O_TRUNC | O_RDWR, 0666);
 
-    // obtem memoria compartilhada para a primeira dimensao da matriz A
-    if ((shm_A_ptr = shmget(IPC_PRIVATE, height * sizeof(float*), IPC_CREAT | 0666)) < 0) {
-        perror("erro no shmget");
-        exit(1);
-    }
+    // aloca as matrizes
+    A = mmap(0, height * sizeof(float*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, shm_fd, 0);
+    B = mmap(0, height * sizeof(float*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, shm_fd, 0);
+    C = mmap(0, height * sizeof(float*), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, shm_fd, 0);
 
-    // obtem memoria compartilhada para a primeira dimensao da matriz B
-    if ((shm_B_ptr = shmget(IPC_PRIVATE, height * sizeof(float*), IPC_CREAT | 0666)) < 0) {
-        perror("erro no shmget");
-        exit(1);
-    }
-
-    // obtem memoria compartilhada para a primeira dimensao da matriz C
-    if ((shm_C_ptr = shmget(IPC_PRIVATE, height * sizeof(float*), IPC_CREAT | 0666)) < 0) {
-        perror("erro no shmget");
-        exit(1);
-    }
-
-    A = (float**) shmat(shm_A_ptr, NULL, 0);
-    B = (float**) shmat(shm_B_ptr, NULL, 0);
-    C = (float**) shmat(shm_C_ptr, NULL, 0);
-
-    // obtem memoria compartilhada para a segunda dimensao
-    // das matrizes A, B e C
-    for (i = 0; i < height; i++) {
-        if ((shm_A[i] = shmget(IPC_PRIVATE, width * sizeof(float), IPC_CREAT | 0666)) < 0) {
-            perror("shmget i");
-            exit(1);
-        }
-
-        if ((shm_B[i] = shmget(IPC_PRIVATE, width * sizeof(float), IPC_CREAT | 0666)) < 0) {
-            perror("shmget i");
-            exit(1);
-        }
-
-        if ((shm_C[i] = shmget(IPC_PRIVATE, width * sizeof(float), IPC_CREAT | 0666)) < 0) {
-            perror("shmget i");
-            exit(1);
-        }
-
-        A[i] = (float*) shmat(shm_A[i], NULL, 0);
-        B[i] = (float*) shmat(shm_B[i], NULL, 0);
-        C[i] = (float*) shmat(shm_C[i], NULL, 0);
+    for (jC = 0; jC < height; jC++) {
+        A[jC] = mmap(0, width * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, shm_fd, 0);
+        B[jC] = mmap(0, width * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, shm_fd, 0);
+        C[jC] = mmap(0, width * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, shm_fd, 0);
     }
 
     // le as matrizes A e B do arquivo
@@ -176,14 +145,13 @@ int main (int argc, char **argv) {
     printf("\nResultado:");
     printMatrix(C, width, height);
 
-    // "desaloca" as matrizes e devolve a memoria compartilhada
-    shmdt(A);
-    shmdt(B);
-    shmdt(C);
 
-    shmctl(shm_A_ptr, IPC_RMID, 0);
-    shmctl(shm_B_ptr, IPC_RMID, 0);
-    shmctl(shm_C_ptr, IPC_RMID, 0);
+    // "desaloca" as matrizes
+    munmap(A, sizeof A);
+    munmap(B, sizeof B);
+    munmap(C, sizeof C);
+
+    shm_unlink(mem_name);
 
     return EXIT_SUCCESS;
 }
