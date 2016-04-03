@@ -147,17 +147,15 @@ int main (int argc, char **argv) {
 
     // faz a multiplicacao entre as matrizes e guarda em C
     for (jC = 0; jC < height; jC++) {
-        for (jC = 0; jC < height; jC++) {
-            for (iC = start_col; iC < end_col; iC++) {
-                float aux = 0.0f;
+        for (iC = start_col; iC < end_col; iC++) {
+            float aux = 0.0f;
 
-                for (iA = 0; iA < width; iA++) {
-                    aux += A[jC][iA] * B[iA][iC];
-                    steps++;
-                }
-
-                C[jC][iC] = aux;
+            for (iA = 0; iA < width; iA++) {
+                aux += A[jC][iA] * B[iA][iC];
+                steps++;
             }
+
+            C[jC][iC] = aux;
         }
     }
 
