@@ -5,7 +5,6 @@
 #include <sys/wait.h>
 #include <sys/sysinfo.h>
 #include <sys/shm.h>
-#include <math.h>
 
 void printMatrix(float **m, float w, float h) {
     int i, j;
@@ -142,8 +141,8 @@ int main (int argc, char **argv) {
 
     // cada processo obtem as colunas que tera que calcular
     // colunas = [start_col, end_col[
-    start_col = floor((1.0f * width / num_procs) * pnum);
-    end_col = floor((1.0f * width / num_procs) * (pnum + 1));
+    start_col = ((int) (1.0f * width / num_procs) * pnum);
+    end_col = ((int) (1.0f * width / num_procs) * (pnum + 1));
 
 
     // faz a multiplicacao entre as matrizes e guarda em C
