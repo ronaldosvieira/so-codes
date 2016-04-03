@@ -9,4 +9,6 @@ Um terminal simples em C utilizando as funções ```fork``` e ```exec```.
 ## Multiplicação de matrizes
 Algoritmo de multiplicação de matrizes quadradas paralelo. Parâmetros: ```./mult-matrizes-xxxx.o <arquivo de entrada> <opcional: numero de processos/threads>```
 * Diretório: ```mult-matrizes/```
-* Arquivos: ```mult-matrizes-processos.c```: utilizando processos e compartilhamento de memória através das funções ```shmget``` e ```shmat```.
+* Arquivos:
+	* ```mult-matrizes-processos.c```: utilizando processos e compartilhamento de memória através das funções ```shmget``` e ```shmat```.
+	* ```mult-matrizes-threads.c```: utilizando threads através da biblioteca ```pthread```. Compilar com ```gcc (...) -lpthread```
