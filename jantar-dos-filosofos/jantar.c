@@ -10,11 +10,36 @@ typedef struct {
     int *left_fork, *right_fork;
 } thread_arg, *ptr_thread_arg;
 
+void think(int i) {
+    printf("Filósofo %d está pensando...\n", i);
+}
+
+void eat(int i) {
+    printf("Filósofo %d está comendo. :9\n", i);
+}
+
 void* philosophers(void *arg) {
     ptr_thread_arg t_arg = (ptr_thread_arg) arg;
 
-    printf("Oi, sou o filosofo %d! Meus garfos sao o %d e o %d!\n", 
-        t_arg->idt, *t_arg->left_fork, *t_arg->right_fork);
+    while(1) {
+        think(t_arg->idt);
+
+        if ((*t_arg->left_fork) || (*t_arg->right_fork)) {
+            printf("Treta!\n");
+        }
+
+        (*t_arg->left_fork) = 1;
+        (*t_arg->right_fork) = 1;
+
+        eat(t_arg->idt);
+
+        if (!(*t_arg->left_fork) || !(*t_arg->right_fork)) {
+            printf("Treta!\n");
+        }
+
+        (*t_arg->left_fork) = 0;
+        (*t_arg->right_fork) = 0;
+    }
 }
 
 int main (int argc, char **argv) {
@@ -30,7 +55,7 @@ int main (int argc, char **argv) {
 
     // inicializa garfos
     int forks[num_philosophers];
-    for (i = 0; i < num_philosophers; i++) forks[i] = i;
+    for (i = 0; i < num_philosophers; i++) forks[i] = 0;
 
     printf("Num. de filosofos: %d\n", num_philosophers);
 
@@ -51,6 +76,10 @@ int main (int argc, char **argv) {
 
     for (i = 0; i < num_philosophers; i++) {
         pthread_join(threads[i], NULL);
+    }
+
+    for (i = 0; i < num_philosophers; i++) {
+        printf("forks[%d] = %d\n", i, forks[i]);
     }
 
     return EXIT_SUCCESS;
