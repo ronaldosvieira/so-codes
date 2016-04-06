@@ -11,4 +11,5 @@ Algoritmo de multiplicação de matrizes quadradas paralelo. Parâmetros: ```./m
 * Diretório: ```mult-matrizes/```
 * Arquivos:
 	* ```mult-matrizes-processos.c```: utilizando processos e compartilhamento de memória através das funções ```shmget``` e ```shmat```.
-	* ```mult-matrizes-threads.c```: utilizando threads através da biblioteca ```pthread```. Compilar com ```gcc (...) -lpthread```
+	* ```mult-matrizes-threads.c```: utilizando threads através da biblioteca ```pthread```. Compilar com ```gcc (...) -lpthread```.
+	* ```input.txt```: exemplo de arquivo de entrada.
