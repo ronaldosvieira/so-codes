@@ -4,6 +4,7 @@
 #include <semaphore.h>
 
 #define CHAIRS 5
+#define NUM_CUST 25
 
 typedef int semaphore;
 
@@ -14,10 +15,12 @@ typedef struct {
 sem_t cust_sem, barb_sem, mutex;
 int waiting = 0;
 int done = 0;
+int qtd = 0;
 
 void cut_hair() {
 	//printf("Cortando cabelo...\n");
 	//fflush(stdin);
+	qtd++;
 }
 
 void get_haircut(int i) {
@@ -42,12 +45,13 @@ void *barber_func(void *arg) {
 void *customer_func(void *arg) {
 	ptr_thread_arg t_arg = (ptr_thread_arg) arg;
 
-	printf("Customer %d ativado!!!\n", t_arg->idt);
-
 	sem_wait(&mutex);
+
+	printf("Cliente %d chegou!!!\n", t_arg->idt);
 
 	if (waiting < CHAIRS) {
 		waiting++;
+		printf("Cliente %d esperando!!!\n", t_arg->idt);
 		sem_post(&cust_sem);
 		sem_post(&mutex);
 		sem_wait(&barb_sem);
@@ -56,13 +60,15 @@ void *customer_func(void *arg) {
 	} else {
 		sem_post(&mutex);
 	}
+
+	printf("Cliente %d foi embora!!!\n", t_arg->idt);
 }
 
 int main() {
 	int i;
 	pthread_t barber;
-	pthread_t customers[CHAIRS];
-	thread_arg cust_args[CHAIRS];
+	pthread_t customers[NUM_CUST];
+	thread_arg cust_args[NUM_CUST];
 
 	sem_init(&cust_sem, 0, 0);
 	sem_init(&barb_sem, 0, 0);
@@ -70,13 +76,13 @@ int main() {
 
 	pthread_create(&barber, NULL, barber_func, NULL);
 
-	for (i = 0; i < CHAIRS; i++) {
+	for (i = 0; i < NUM_CUST; i++) {
         cust_args[i].idt = i;
 
         pthread_create(&(customers[i]), NULL, customer_func, &(cust_args[i]));
     }
 
-    for (i = 0; i < CHAIRS; i++) {
+    for (i = 0; i < NUM_CUST; i++) {
     	pthread_join(customers[i], NULL);
     }
 
@@ -85,4 +91,6 @@ int main() {
 	sem_destroy(&cust_sem);
 	sem_destroy(&barb_sem);
 	sem_destroy(&mutex);
+
+	printf("qtd = %d\n", qtd);
 }
