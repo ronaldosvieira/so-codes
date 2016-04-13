@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <unistd.h>
 
 #define SLOTS 10
 #define NUM_CARS 100
@@ -22,10 +23,11 @@ void let_parking() {
 	//fflush(stdin);
 }
 
-void park(int i) {
+void park(int time_amount) {
 	//printf("Carro %d estacionou por %d msecs...\n", i, i);
 	//fflush(stdin);
 	qtd++;
+	usleep(time_amount);
 }
 
 void *parking_lot_func(void *arg) {
@@ -52,13 +54,15 @@ void *cars_func(void *arg) {
 	if (waiting < SLOTS) {
 		waiting++;
 
-		printf("Carro %d estacionou por %d msecs...\n", t_arg->idt, t_arg->idt);
+		int time_amount = rand() % 100;
+
+		printf("Carro %d estacionou por %d usecs...\n", t_arg->idt, time_amount);
 		
 		sem_post(&car_sem);
 		sem_post(&mutex);
 		sem_wait(&plot_sem);
 
-		park(t_arg->idt);
+		park(time_amount);
 	} else {
 		sem_post(&mutex);
 	}
@@ -67,6 +71,8 @@ void *cars_func(void *arg) {
 }
 
 int main() {
+	srand(time(NULL));
+
 	int i;
 	pthread_t parking_lot;
 	pthread_t cars[NUM_CARS];
