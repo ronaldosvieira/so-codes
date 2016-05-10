@@ -4,8 +4,6 @@
 #include <semaphore.h>
 #include <unistd.h>
 
-typedef int semaphore;
-
 typedef struct {
     int idt;
     int num_cars;
