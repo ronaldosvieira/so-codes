@@ -4,35 +4,60 @@
 #include <sys/sysinfo.h>
 #include <pthread.h>
 
-void printMatrix(float **m, float w, float h) {
-    int i, j;
-    
-    printf("\n");
-    
-    for (j = 0; j < h; j++) {
-        for (i = 0; i < w; i++) {
-            printf("%.2f ", m[j][i]);
-        }
-        printf("\n");
-    }
-}
+#define MAX_NUM 5
 
 typedef struct {
     int idt;
     int start_col, end_col;
     int width, height;
-    float ***A_ptr, ***B_ptr, ***C_ptr;
+    int ***A_ptr, ***B_ptr, ***C_ptr;
 } thread_arg, *ptr_thread_arg;
+
+int** initMatrix(int m, int n) {
+    int** mat = (int**) malloc(sizeof(int*) * m);
+    
+    for (int i = 0; i < m; i++) {
+        mat[i] = (int*) malloc(sizeof(int) * n);
+    }
+    
+    return mat;
+}
+
+int** generateRandomMatrix(int** mat, int m, int n) {
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            mat[i][j] = rand() % MAX_NUM;
+        }
+    }
+    
+    return mat;
+}
+
+void printMatrix(int** mat, int m, int n) {
+    printf("[");
+    
+    for (int i = 0; i < m; i++) {
+        printf(" ");
+        
+        for (int j = 0; j < n; j++) {
+            printf("%d ", mat[i][j]);
+        }
+        
+        if (i != m - 1) printf("\n");
+    }
+    
+    printf("]\n");
+}
 
 void* thread_func(void *arg) {
     ptr_thread_arg t_arg = (ptr_thread_arg) arg;
     int j, i, k, steps = 0;
-    float aux;
+    int aux;
 
     // faz a multiplicacao entre as matrizes e guarda em C
     for (i = 0; i < t_arg->height; i++) {
         for (j = t_arg->start_col; j < t_arg->end_col; j++) {
-            aux = 0.0f;
+            aux = 0;
 
             for (k = 0; k < t_arg->width; k++) {
                 aux += (*t_arg->A_ptr)[i][k] * (*t_arg->B_ptr)[k][j];
@@ -48,7 +73,7 @@ void* thread_func(void *arg) {
 }
 
 int main (int argc, char **argv) {
-    float **A, **B, **C;
+    int **A, **B, **C;
     int iA, jA, iB, jB, iC, jC, i;
     int height, width;
     int num_threads;
@@ -56,25 +81,18 @@ int main (int argc, char **argv) {
     FILE *input_file;
 
     // checa argumentos
-    if (argv[1] == NULL || (argv[2] != NULL && atoi(argv[2]) < 1)) {
-        printf("Modo de usar: %s (arquivo) (?qtd. processos > 0)\n", argv[0]);
+    if (argv[1] == NULL || atoi(argv[1]) < 1 || 
+        (argv[2] != NULL && atoi(argv[2]) < 1)) {
+        printf("Modo de usar: %s (tamanho das matrizes > 0) (?qtd. threads > 0)\n", argv[0]);
         return EXIT_FAILURE;
     }
 
-    // abre o arquivo (sai em caso de erro)
-    input_file = fopen(argv[1], "r");
-    if (input_file == NULL) {
-        printf("Erro: problema ao abrir o arquivo.\n");
-        return EXIT_FAILURE;
-    }
-
-    // le width e height do arquivo
-    fscanf(input_file, "%d %d", &width, &height);
+    width = height = atoi(argv[1]);
 
     printf("Processadores disponiveis: %d\n", get_nprocs());
 
-    // caso o num. de processos nao for especificado
-    // pega o menor entre o num. de colunas e o num. de processadores disponiveis
+    // caso o num. de threads nao for especificado
+    // pega o menor entre o tam. da matriz e o num. de processadores disponiveis
     if (argv[2] != NULL) num_threads = atoi(argv[2]);
     else {
         if (width <= get_nprocs()) num_threads = width;
@@ -83,35 +101,12 @@ int main (int argc, char **argv) {
 
     printf("Num. de threads: %d\n", num_threads);
 
-    A = (float**) malloc(height * sizeof(float*));
-    B = (float**) malloc(height * sizeof(float*));
-    C = (float**) malloc(height * sizeof(float*));
+    A = (int**) initMatrix(width, height);
+    B = (int**) initMatrix(width, height);
+    C = (int**) initMatrix(width, height);
 
-    for (i = 0; i < height; i++) {
-        A[i] = (float*) malloc(width * sizeof(float));
-        B[i] = (float*) malloc(width * sizeof(float));
-        C[i] = (float*) malloc(width * sizeof(float));
-    }
-    
-    // le as matrizes A e B do arquivo
-    for (jC = 0; jC < height; jC++) {
-        for (iC = 0; iC < width; iC++) {
-            fscanf(input_file, "%f", &A[jC][iC]);
-        }
-    }
-
-    fscanf(input_file, "\n");
-
-    for (jC = 0; jC < height; jC++) {
-        for (iC = 0; iC < width; iC++) {
-            fscanf(input_file, "%f", &B[jC][iC]);
-        }
-    }
-
-    printf("\nArquivo %s lido!\n\n", argv[1]);
-
-    // fecha o arquivo
-    fclose(input_file);
+    generateRandomMatrix(A, width, height);
+    generateRandomMatrix(B, width, height);
 
     pthread_t threads[num_threads];
     thread_arg thread_args[num_threads];
@@ -129,8 +124,8 @@ int main (int argc, char **argv) {
 
         // cada thread obtem as colunas que tera que calcular
         // colunas = [start_col, end_col[
-        thread_args[i].start_col = ((int) (1.0f * width / num_threads) * i);
-        thread_args[i].end_col = ((int) (1.0f * width / num_threads) * (i + 1));
+        thread_args[i].start_col = (int) ((1.0f * width / num_threads) * i);
+        thread_args[i].end_col = (int) ((1.0f * width / num_threads) * (i + 1));
 
         // cria a thread i
         pthread_create(&(threads[i]), NULL, thread_func, &(thread_args[i]));
