@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/file.h>
 #include <sys/sysinfo.h>
+#include <sys/time.h>
 #include <pthread.h>
 
 #define DEBUG 0
@@ -81,7 +81,8 @@ int main (int argc, char **argv) {
     int height, width;
     int num_threads;
 
-    FILE *input_file;
+    struct timeval start_t, end_t;
+    double total_t;
 
     // checa argumentos
     if (argv[1] == NULL || atoi(argv[1]) < 1 || 
@@ -114,6 +115,8 @@ int main (int argc, char **argv) {
     pthread_t threads[num_threads];
     thread_arg thread_args[num_threads];
 
+    gettimeofday(&start_t, NULL);
+
     for (i = 0; i < num_threads; i++) {
         thread_args[i].idt = i;
 
@@ -138,9 +141,17 @@ int main (int argc, char **argv) {
         pthread_join(threads[i], NULL);
     }
 
+    gettimeofday(&end_t, NULL);
+
+    total_t = ((end_t.tv_sec  - start_t.tv_sec) * 1000000u + 
+         end_t.tv_usec - start_t.tv_usec) / 1.e6;
+
     // exibe a matriz resultante
     printflush("\nResultado:");
     printMatrix(C, width, height);
+
+    // exibe o tempo gasto
+    printf("Time elapsed: %lfs\n", total_t);
 
     // desaloca as matrizes
     free(A);
