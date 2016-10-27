@@ -4,6 +4,9 @@
 #include <sys/sysinfo.h>
 #include <pthread.h>
 
+#define DEBUG 0
+#define printflush(s, ...) do {if (DEBUG) {printf(s, ##__VA_ARGS__); fflush(stdout);}} while (0)
+
 #define MAX_NUM 5
 
 typedef struct {
@@ -34,19 +37,19 @@ int** generateRandomMatrix(int** mat, int m, int n) {
 }
 
 void printMatrix(int** mat, int m, int n) {
-    printf("[");
+    printflush("[");
     
     for (int i = 0; i < m; i++) {
-        printf(" ");
+        printflush(" ");
         
         for (int j = 0; j < n; j++) {
-            printf("%d ", mat[i][j]);
+            printflush("%d ", mat[i][j]);
         }
         
-        if (i != m - 1) printf("\n");
+        if (i != m - 1) printflush("\n");
     }
     
-    printf("]\n");
+    printflush("]\n");
 }
 
 void* thread_func(void *arg) {
@@ -69,7 +72,7 @@ void* thread_func(void *arg) {
     }
 
     // cada thread printa seu td e qtd de passos
-    printf("Passos na thread %d: %d\n", t_arg->idt, steps);
+    printflush("Passos na thread %d: %d\n", t_arg->idt, steps);
 }
 
 int main (int argc, char **argv) {
@@ -83,13 +86,13 @@ int main (int argc, char **argv) {
     // checa argumentos
     if (argv[1] == NULL || atoi(argv[1]) < 1 || 
         (argv[2] != NULL && atoi(argv[2]) < 1)) {
-        printf("Modo de usar: %s (tamanho das matrizes > 0) (?qtd. threads > 0)\n", argv[0]);
+        printflush("Modo de usar: %s (tamanho das matrizes > 0) (?qtd. threads > 0)\n", argv[0]);
         return EXIT_FAILURE;
     }
 
     width = height = atoi(argv[1]);
 
-    printf("Processadores disponiveis: %d\n", get_nprocs());
+    printflush("Processadores disponiveis: %d\n", get_nprocs());
 
     // caso o num. de threads nao for especificado
     // pega o menor entre o tam. da matriz e o num. de processadores disponiveis
@@ -99,7 +102,7 @@ int main (int argc, char **argv) {
         else num_threads = get_nprocs();
     }
 
-    printf("Num. de threads: %d\n", num_threads);
+    printflush("Num. de threads: %d\n", num_threads);
 
     A = (int**) initMatrix(width, height);
     B = (int**) initMatrix(width, height);
@@ -136,7 +139,7 @@ int main (int argc, char **argv) {
     }
 
     // exibe a matriz resultante
-    printf("\nResultado:");
+    printflush("\nResultado:");
     printMatrix(C, width, height);
 
     // desaloca as matrizes
